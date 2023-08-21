@@ -11,6 +11,7 @@
     "dev": "nodemon src/index.ts"
   },
   "dependencies": {
+    "@fastify/mongodb": "^7.0.0",
     "@fastify/passport": "^2.3.0",
     "fastify": "^4.21.0",
     "fastify-plugin": "^4.5.1"
