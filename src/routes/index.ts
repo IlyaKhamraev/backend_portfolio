@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
+import { ObjectId } from "@fastify/mongodb";
 
 export const routes = (app: FastifyInstance) => {
   app.get("/user", async (_request, reply) => {
@@ -12,7 +13,7 @@ export const routes = (app: FastifyInstance) => {
   });
   app.get("/films", async (_request, reply) => {
     try {
-      const db = app.mongo.db?.collection("movies");
+      const db = await app.mongo.db?.collection("movies");
       const movies = await db?.find({}).toArray();
       reply.status(200).send(movies);
     } catch (err) {
@@ -36,7 +37,7 @@ export const routes = (app: FastifyInstance) => {
       const { promoImg, client, name, category, movie } = _request.body;
 
       try {
-        const db = app.mongo.db?.collection("movies");
+        const db = await app.mongo.db?.collection("movies");
         const film = await db?.insertOne({
           promoImg,
           client,
@@ -45,6 +46,26 @@ export const routes = (app: FastifyInstance) => {
           movie,
         });
         reply.status(200).send(film);
+      } catch (err) {
+        reply.status(500).send(err);
+      }
+    }
+  );
+  app.get(
+    "/film/:id",
+    async (
+      _request: FastifyRequest<{
+        Params: {
+          id: string;
+        };
+      }>,
+      reply
+    ) => {
+      const { id } = _request.params;
+      const db = await app.mongo.db?.collection("movies");
+      const film = await db?.findOne({ _id: new ObjectId(id) });
+      reply.status(200).send(film);
+      try {
       } catch (err) {
         reply.status(500).send(err);
       }
