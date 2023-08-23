@@ -1,49 +1,75 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { ObjectId } from "@fastify/mongodb";
+import { Authenticator } from "@fastify/passport";
 
-export const routes = (app: FastifyInstance) => {
-  app.get("/user", async (_request, reply) => {
+export const routes = (
+  app: FastifyInstance,
+  fastifyPassport: Authenticator
+) => {
+  app.post("/sign-in", async (req, rep) => {
+    //@ts-ignore
+    const { username, password } = req.body;
+
+    console.log(req.headers.cookie);
+    console.log("username", username);
+    console.log("password", password);
+
     try {
-      const db = app.mongo.db?.collection("users");
-      const users = await db?.find({}).toArray();
-      reply.status(200).send(users);
+      // rep.status(200).send({ email, password });
     } catch (err) {
-      reply.status(500).send(err);
+      rep.status(500).send(err);
     }
   });
-  app.get("/films", async (_request, reply) => {
+  app.get(
+    "/user",
+    {
+      preValidation: fastifyPassport.authenticate("local", {
+        authInfo: false,
+      }),
+    },
+    async (req, rep) => {
+      try {
+        const db = app.mongo.db?.collection("users");
+        const users = await db?.find({}).toArray();
+        rep.status(200).send(users);
+      } catch (err) {
+        rep.status(500).send(err);
+      }
+    }
+  );
+  app.get("/films", async (req, rep) => {
     try {
       const db = await app.mongo.db?.collection("movies");
       const movies = await db?.find({}).toArray();
-      reply.status(200).send(movies);
+      rep.status(200).send(movies);
     } catch (err) {
-      reply.status(500).send(err);
+      rep.status(500).send(err);
     }
   });
   app.get(
     "/film/:id",
     async (
-      _request: FastifyRequest<{
+      req: FastifyRequest<{
         Params: {
           id: string;
         };
       }>,
-      reply
+      rep
     ) => {
-      const { id } = _request.params;
+      const { id } = req.params;
       const db = await app.mongo.db?.collection("movies");
       const film = await db?.findOne({ _id: new ObjectId(id) });
-      reply.status(200).send(film);
+      rep.status(200).send(film);
       try {
       } catch (err) {
-        reply.status(500).send(err);
+        rep.status(500).send(err);
       }
     }
   );
   app.post(
     "/film",
     async (
-      _request: FastifyRequest<{
+      req: FastifyRequest<{
         Body: {
           promoImg: string;
           client: string;
@@ -52,9 +78,9 @@ export const routes = (app: FastifyInstance) => {
           movie: string;
         };
       }>,
-      reply
+      rep
     ) => {
-      const { promoImg, client, name, category, movie } = _request.body;
+      const { promoImg, client, name, category, movie } = req.body;
 
       try {
         const db = await app.mongo.db?.collection("movies");
@@ -65,16 +91,16 @@ export const routes = (app: FastifyInstance) => {
           category,
           movie,
         });
-        reply.status(200).send(film);
+        rep.status(200).send(film);
       } catch (err) {
-        reply.status(500).send(err);
+        rep.status(500).send(err);
       }
     }
   );
   app.patch(
     "/film",
     async (
-      _request: FastifyRequest<{
+      req: FastifyRequest<{
         Body: {
           id: string;
           promoImg: string;
@@ -84,19 +110,19 @@ export const routes = (app: FastifyInstance) => {
           movie: string;
         };
       }>,
-      reply
+      rep
     ) => {
-      const { id, promoImg, client, name, category, movie } = _request.body;
+      const { id, promoImg, client, name, category, movie } = req.body;
 
       try {
         const db = await app.mongo.db?.collection("movies");
 
         const film = await db?.findOne({ _id: new ObjectId(id) });
-        await db?.updateOne({ _id: new ObjectId(id) }, _request.body);
+        await db?.updateOne({ _id: new ObjectId(id) }, req.body);
 
-        reply.status(200).send(film);
+        rep.status(200).send(film);
       } catch (err) {
-        reply.status(500).send(err);
+        rep.status(500).send(err);
       }
     }
   );
