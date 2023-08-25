@@ -18,8 +18,6 @@ export const plugins = (
   fastifyPassport.use(
     "local",
     new Strategy((username, password, done) => {
-      console.log("проверка стратегии");
-
       if (username === "admin" && password === "admin") {
         console.log(username, password, "OLOLOL");
         return done(null, { username: "admin" });
