@@ -6,37 +6,22 @@ export const routes = (
   app: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
-  app.post("/sign-in", async (req, rep) => {
-    //@ts-ignore
-    const { username, password } = req.body;
-
-    console.log(req.headers.cookie);
-    console.log("username", username);
-    console.log("password", password);
-
+  app.post(
+    "/sign-in",
+    {
+      preValidation: fastifyPassport.authenticate("local", { authInfo: false }),
+    },
+    (req, rep) => {}
+  );
+  app.get("/user", async (req, rep) => {
     try {
-      // rep.status(200).send({ email, password });
+      const db = app.mongo.db?.collection("users");
+      const users = await db?.find({}).toArray();
+      rep.status(200).send(users);
     } catch (err) {
       rep.status(500).send(err);
     }
   });
-  app.get(
-    "/user",
-    {
-      preValidation: fastifyPassport.authenticate("local", {
-        authInfo: false,
-      }),
-    },
-    async (req, rep) => {
-      try {
-        const db = app.mongo.db?.collection("users");
-        const users = await db?.find({}).toArray();
-        rep.status(200).send(users);
-      } catch (err) {
-        rep.status(500).send(err);
-      }
-    }
-  );
   app.get("/films", async (req, rep) => {
     try {
       const db = await app.mongo.db?.collection("movies");
