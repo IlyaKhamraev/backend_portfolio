@@ -6,13 +6,27 @@ export const routes = (
   app: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
+  // app.addHook("preValidation", (req, rep, next) => {
+  //   console.log("isAuth", req.isAuthenticated());
+  //   if (req.isAuthenticated()) {
+  //     return next();
+  //   }
+  //   rep.status(500).send("isNot Auth!");
+  // });
+
   app.post(
     "/sign-in",
-    {
-      preValidation: fastifyPassport.authenticate("local", { authInfo: false }),
-    },
-    (req, rep) => {}
+    { preValidation: fastifyPassport.authenticate("local") },
+    (req, rep) => {
+      try {
+        // req.session.cookie.secure;
+        rep.status(200).send({ status: "authenticated", user: req.user });
+      } catch (err) {
+        rep.status(500).send(err);
+      }
+    }
   );
+
   app.get("/user", async (req, rep) => {
     try {
       const db = app.mongo.db?.collection("users");

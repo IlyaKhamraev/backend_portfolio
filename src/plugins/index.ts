@@ -3,6 +3,7 @@ import { Authenticator } from "@fastify/passport";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
 import { Strategy } from "passport-local";
+import { request } from "http";
 
 export const plugins = (
   fastify: FastifyInstance,
@@ -10,7 +11,9 @@ export const plugins = (
 ) => {
   fastify.register(fastifyCookie);
   fastify.register(fastifySession, {
-    secret: "secret with minimum length of 32 characters",
+    cookieName: "sessionId",
+    secret: "a secret with minimum length of 32 characters",
+    cookie: { secure: false },
   });
 
   fastify.register(fastifyPassport.initialize());
@@ -19,7 +22,7 @@ export const plugins = (
   fastifyPassport.use(
     "local",
     new Strategy(
-      { usernameField: "email", passReqToCallback: true, session: false },
+      { usernameField: "email", passReqToCallback: true },
       async (req, email, password, done) => {
         const db = fastify.mongo.db?.collection("users");
 
@@ -36,15 +39,16 @@ export const plugins = (
     )
   );
 
-  fastifyPassport.registerUserSerializer(async (user, request) =>
-    console.log("registerUserSerializer", user)
-  );
+  //@ts-ignore
+  fastifyPassport.registerUserSerializer((user) => user._id);
 
-  fastifyPassport.registerUserDeserializer(async (id, request) => {
-    console.log("registerUserSerializer", id);
+  fastifyPassport.registerUserDeserializer(async (id) => {
+    console.log("registerUserDeserializer", id);
 
     const db = fastify.mongo.db?.collection("users");
 
-    return await db?.find({ id: id });
+    const user = await db?.find({ id: id });
+    console.log(user);
+    return user;
   });
 };
