@@ -4,6 +4,7 @@ import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
 import { Strategy } from "passport-local";
 import { request } from "http";
+import { Console } from "console";
 
 export const plugins = (
   fastify: FastifyInstance,
@@ -48,7 +49,6 @@ export const plugins = (
     const db = fastify.mongo.db?.collection("users");
 
     const user = await db?.find({ id: id });
-    console.log(user);
     return user;
   });
 };

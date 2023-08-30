@@ -2,6 +2,24 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { ObjectId } from "@fastify/mongodb";
 import { Authenticator } from "@fastify/passport";
 
+//@ts-ignore
+function authenticate(request, reply, done) {
+  console.log(" request.session", request.session);
+
+  // if (!token) {
+  //   reply.code(401).send({ message: "Необходима аутентификация" });
+  //   return;
+  // }
+
+  // try {
+  //   const decoded = jwt.verify(token, "секретный_ключ");
+  //   request.user = decoded;
+  //   done();
+  // } catch (error) {
+  //   reply.code(401).send({ message: "Неверный токен" });
+  // }
+}
+
 export const routes = (
   app: FastifyInstance,
   fastifyPassport: Authenticator
@@ -27,7 +45,7 @@ export const routes = (
     }
   );
 
-  app.get("/user", async (req, rep) => {
+  app.get("/user", { preHandler: authenticate }, async (req, rep) => {
     try {
       const db = app.mongo.db?.collection("users");
       const users = await db?.find({}).toArray();
