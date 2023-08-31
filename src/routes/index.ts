@@ -2,57 +2,31 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { ObjectId } from "@fastify/mongodb";
 import { Authenticator } from "@fastify/passport";
 
-//@ts-ignore
-function authenticate(request, reply, done) {
-  console.log(" request.session", request.session);
-
-  // if (!token) {
-  //   reply.code(401).send({ message: "Необходима аутентификация" });
-  //   return;
-  // }
-
-  // try {
-  //   const decoded = jwt.verify(token, "секретный_ключ");
-  //   request.user = decoded;
-  //   done();
-  // } catch (error) {
-  //   reply.code(401).send({ message: "Неверный токен" });
-  // }
-}
-
 export const routes = (
   app: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
-  // app.addHook("preValidation", (req, rep, next) => {
-  //   console.log("isAuth", req.isAuthenticated());
-  //   if (req.isAuthenticated()) {
-  //     return next();
-  //   }
-  //   rep.status(500).send("isNot Auth!");
-  // });
-
   app.post(
-    "/sign-in",
+    "/login",
     { preValidation: fastifyPassport.authenticate("local") },
     (req, rep) => {
+      req.logIn(req.user, { session: true });
+      rep.send("Успешная авторизация");
+    }
+  );
+
+  app.get("/users", async (req, rep) => {
+    console.log("req.isAuthenticated()", req.isAuthenticated());
+    if (req.isAuthenticated()) {
       try {
-        // req.session.cookie.secure;
-        rep.status(200).send({ status: "authenticated", user: req.user });
+        const db = app.mongo.db?.collection("users");
+        const users = await db?.find({}).toArray();
+        rep.status(200).send(users);
       } catch (err) {
         rep.status(500).send(err);
       }
     }
-  );
-
-  app.get("/user", { preHandler: authenticate }, async (req, rep) => {
-    try {
-      const db = app.mongo.db?.collection("users");
-      const users = await db?.find({}).toArray();
-      rep.status(200).send(users);
-    } catch (err) {
-      rep.status(500).send(err);
-    }
+    rep.status(500).send("не залогинился");
   });
   app.get("/films", async (req, rep) => {
     try {

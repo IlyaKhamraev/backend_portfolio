@@ -3,8 +3,6 @@ import { Authenticator } from "@fastify/passport";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
 import { Strategy } from "passport-local";
-import { request } from "http";
-import { Console } from "console";
 
 export const plugins = (
   fastify: FastifyInstance,
@@ -21,23 +19,17 @@ export const plugins = (
   fastify.register(fastifyPassport.secureSession());
 
   fastifyPassport.use(
-    "local",
-    new Strategy(
-      { usernameField: "email", passReqToCallback: true },
-      async (req, email, password, done) => {
-        const db = fastify.mongo.db?.collection("users");
+    new Strategy({ usernameField: "email" }, async (email, password, done) => {
+      const db = fastify.mongo.db?.collection("users");
+      const user = await db?.findOne({ email: email });
 
-        const user = await db?.findOne({ email });
-
-        if (!user) {
-          return done(null, false);
-        }
-
-        if (user.password === password) {
-          return done(null, user);
-        }
+      if (!user) {
+        return done(null, false);
       }
-    )
+      if (user.email === email && user.password === password) {
+        return done(null, user);
+      }
+    })
   );
 
   //@ts-ignore
