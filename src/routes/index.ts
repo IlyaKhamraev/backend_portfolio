@@ -14,7 +14,10 @@ export const routes = (
       rep.send("Успешная авторизация");
     }
   );
-
+  app.get("/logout", (req, rep) => {
+    req.logOut();
+    rep.status(200).send("Вы успешно вышли из системы");
+  });
   app.get("/users", async (req, rep) => {
     console.log("req.isAuthenticated()", req.isAuthenticated());
     if (req.isAuthenticated()) {
