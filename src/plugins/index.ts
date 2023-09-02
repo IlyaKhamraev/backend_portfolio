@@ -3,16 +3,28 @@ import { Authenticator } from "@fastify/passport";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
 import { Strategy } from "passport-local";
+import cors from "@fastify/cors";
 
 export const plugins = (
   fastify: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
-  fastify.register(fastifyCookie);
+  fastify.register(cors, {
+    credentials: true,
+    origin: true,
+  });
+
+  fastify.register(fastifyCookie, {
+    secret: "a secret with minimum length of 32 characters",
+  });
   fastify.register(fastifySession, {
     cookieName: "sessionId",
     secret: "a secret with minimum length of 32 characters",
-    cookie: { secure: false },
+    cookie: {
+      secure: false,
+      httpOnly: false,
+      maxAge: 60 * 60 * 60,
+    },
   });
 
   fastify.register(fastifyPassport.initialize());

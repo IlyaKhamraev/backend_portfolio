@@ -10,8 +10,12 @@ export const routes = (
     "/login",
     { preValidation: fastifyPassport.authenticate("local") },
     (req, rep) => {
-      req.logIn(req.user, { session: true });
-      rep.send("Успешная авторизация");
+      try {
+        req.logIn(req.user);
+        rep.status(200).send(req.user);
+      } catch (err) {
+        rep.status(500).send(err);
+      }
     }
   );
   app.get("/logout", (req, rep) => {
