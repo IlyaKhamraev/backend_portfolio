@@ -22,7 +22,7 @@ export const plugins = (
     secret: "a secret with minimum length of 32 characters",
     cookie: {
       secure: false,
-      httpOnly: false,
+      httpOnly: true,
       maxAge: 60 * 60 * 60,
     },
   });
