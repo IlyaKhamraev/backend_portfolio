@@ -17,6 +17,7 @@ export const plugins = (
   fastify.register(fastifyCookie, {
     secret: "a secret with minimum length of 32 characters",
   });
+
   fastify.register(fastifySession, {
     cookieName: "sessionId",
     secret: "a secret with minimum length of 32 characters",
