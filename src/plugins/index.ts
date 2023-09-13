@@ -36,8 +36,8 @@ export const plugins = (
       const db = fastify.mongo.db?.collection("users");
       const user = await db?.findOne({ email: email });
 
-      if (!user) {
-        return done(null, false);
+      if (!user || (user.email === email && user.password !== password)) {
+        return done("Не верный логин или пароль");
       }
       if (user.email === email && user.password === password) {
         return done(null, user);

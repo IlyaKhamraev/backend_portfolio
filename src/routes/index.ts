@@ -35,6 +35,16 @@ export const routes = (
     }
     rep.status(500).send("не залогинился");
   });
+  app.get("/profile", async (req, rep) => {
+    if (req.isAuthenticated()) {
+      try {
+        rep.status(200).send(req.user);
+      } catch (err) {
+        rep.status(500).send(err);
+      }
+    }
+    rep.status(500).send("не залогинился");
+  });
   app.get("/films", async (req, rep) => {
     try {
       const db = await app.mongo.db?.collection("movies");
