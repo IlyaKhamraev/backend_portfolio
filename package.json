@@ -20,6 +20,7 @@
     "@types/passport-local": "^1.0.35",
     "connect-mongo": "^5.0.0",
     "fastify": "^4.21.0",
+    "fastify-file-upload": "^4.0.0",
     "fastify-plugin": "^4.5.1",
     "passport-local": "^1.0.0"
   },

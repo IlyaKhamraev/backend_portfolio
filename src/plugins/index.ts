@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { Authenticator } from "@fastify/passport";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
+// import fileUpload from "fastify-file-upload";
 import { Strategy } from "passport-local";
 import cors from "@fastify/cors";
 
@@ -9,6 +10,7 @@ export const plugins = (
   fastify: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
+  // fastify.register(fileUpload);
   fastify.register(cors, {
     credentials: true,
     origin: true,

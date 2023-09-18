@@ -79,25 +79,27 @@ export const routes = (
     async (
       req: FastifyRequest<{
         Body: {
-          promoImg: string;
-          client: string;
           name: string;
-          category: string;
-          movie: string;
+          client: string;
+          event: string;
+          description: string;
+          vimeo: string;
+          previewImg: string;
         };
       }>,
       rep
     ) => {
-      const { promoImg, client, name, category, movie } = req.body;
+      const { client, name, description, event, vimeo, previewImg } = req.body;
 
       try {
         const db = await app.mongo.db?.collection("movies");
         const film = await db?.insertOne({
-          promoImg,
+          previewImg,
           client,
           name,
-          category,
-          movie,
+          event,
+          vimeo,
+          description,
         });
         rep.status(200).send(film);
       } catch (err) {
