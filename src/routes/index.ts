@@ -1,6 +1,11 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { ObjectId } from "@fastify/mongodb";
 import { Authenticator } from "@fastify/passport";
+import fs from "fs";
+import util from "util";
+import { pipeline } from "stream";
+
+const pump = util.promisify(pipeline);
 
 export const routes = (
   app: FastifyInstance,
@@ -74,39 +79,47 @@ export const routes = (
       }
     }
   );
-  app.post(
-    "/film",
-    async (
-      req: FastifyRequest<{
-        Body: {
-          name: string;
-          client: string;
-          event: string;
-          description: string;
-          vimeo: string;
-          previewImg: string;
-        };
-      }>,
-      rep
-    ) => {
-      const { client, name, description, event, vimeo, previewImg } = req.body;
-
+  app.post("/film", async (req, rep) => {
+    if (req.isAuthenticated()) {
       try {
-        const db = await app.mongo.db?.collection("movies");
-        const film = await db?.insertOne({
-          previewImg,
-          client,
-          name,
-          event,
-          vimeo,
-          description,
-        });
-        rep.status(200).send(film);
+        const data = await req.file();
+
+        if (!data) {
+          return rep.status(500).send("empty data");
+        }
+
+        const formValues = Object.entries(data.fields).filter(
+          ([key, propps]) => key !== "file" && [key, propps]
+        );
+
+        console.log("formValues", formValues);
+
+        await pump(
+          data.file,
+          fs.createWriteStream(`./src/assets/${data.filename}`)
+        );
+
+        // rep.status(200).send(req.user);
       } catch (err) {
         rep.status(500).send(err);
       }
     }
-  );
+
+    // try {
+    //   const db = await app.mongo.db?.collection("movies");
+    //   const film = await db?.insertOne({
+    //     previewImg,
+    //     client,
+    //     name,
+    //     event,
+    //     vimeo,
+    //     description,
+    //   });
+    //   rep.status(200).send(film);
+    // } catch (err) {
+    //   rep.status(500).send(err);
+    // }
+  });
   app.patch(
     "/film",
     async (
