@@ -82,24 +82,32 @@ export const routes = (
   app.post("/film", async (req, rep) => {
     if (req.isAuthenticated()) {
       try {
+        const db = await app.mongo.db?.collection("movies");
         const data = await req.file();
 
-        if (!data) {
+        if (!data?.file) {
           return rep.status(500).send("empty data");
         }
-
-        const formValues = Object.entries(data.fields).filter(
-          ([key, propps]) => key !== "file" && [key, propps]
-        );
-
-        console.log("formValues", formValues);
 
         await pump(
           data.file,
           fs.createWriteStream(`./src/assets/${data.filename}`)
         );
 
-        // rep.status(200).send(req.user);
+        const film = await db?.insertOne({
+          previewImg: data.filename,
+          //@ts-ignore
+          client: data.fields.client.value,
+          //@ts-ignore
+          name: data.fields.name.value,
+          //@ts-ignore
+          event: data.fields.event.value,
+          //@ts-ignore
+          vimeo: data.fields.vimeo.value,
+          //@ts-ignore
+          description: data.fields.description.value,
+        });
+        rep.status(200).send(film);
       } catch (err) {
         rep.status(500).send(err);
       }
@@ -144,6 +152,29 @@ export const routes = (
         await db?.updateOne({ _id: new ObjectId(id) }, req.body);
 
         rep.status(200).send(film);
+      } catch (err) {
+        rep.status(500).send(err);
+      }
+    }
+  );
+  app.delete(
+    "/film",
+    async (
+      req: FastifyRequest<{
+        Body: {
+          id: string;
+        };
+      }>,
+      rep
+    ) => {
+      const { id } = req.body;
+
+      try {
+        const db = await app.mongo.db?.collection("movies");
+
+        const removedFilm = await db?.deleteOne({ _id: new ObjectId(id) });
+
+        rep.status(200).send({ ...removedFilm, id: id });
       } catch (err) {
         rep.status(500).send(err);
       }
