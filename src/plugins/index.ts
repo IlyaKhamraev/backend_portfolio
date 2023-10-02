@@ -6,29 +6,19 @@ import { Strategy } from "passport-local";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 
+import { multipartConfig } from "src/plugins/multipart";
+import { sessionConfig } from "src/plugins/session";
+import { corsConfig } from "src/plugins/cors";
+import { cookieConfig } from "src/plugins/cookie";
+
 export const plugins = (
   fastify: FastifyInstance,
   fastifyPassport: Authenticator
 ) => {
-  fastify.register(multipart);
-  fastify.register(cors, {
-    credentials: true,
-    origin: true,
-  });
-
-  fastify.register(fastifyCookie, {
-    secret: "a secret with minimum length of 32 characters",
-  });
-
-  fastify.register(fastifySession, {
-    cookieName: "sessionId",
-    secret: "a secret with minimum length of 32 characters",
-    cookie: {
-      secure: false,
-      httpOnly: false,
-      maxAge: 60 * 60 * 60,
-    },
-  });
+  fastify.register(multipart, multipartConfig);
+  fastify.register(cors, corsConfig);
+  fastify.register(fastifyCookie, cookieConfig);
+  fastify.register(fastifySession, sessionConfig);
 
   fastify.register(fastifyPassport.initialize());
   fastify.register(fastifyPassport.secureSession());
@@ -39,7 +29,7 @@ export const plugins = (
       const user = await db?.findOne({ email: email });
 
       if (!user || (user.email === email && user.password !== password)) {
-        return done("Не верный логин или пароль");
+        return done({ error: "Не верный логин или пароль" });
       }
       if (user.email === email && user.password === password) {
         return done(null, user);
