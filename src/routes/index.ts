@@ -2,15 +2,12 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { ObjectId } from "@fastify/mongodb";
 import { Authenticator } from "@fastify/passport";
 
-import { uploadImage } from "src/middleware/upload";
-
+import { bufferToStream } from "src/utils/file";
 import fs from "fs";
 import util from "util";
 import { pipeline } from "stream";
 
 const pump = util.promisify(pipeline);
-
-export type ExtendedFile = File & { key: string };
 
 export const routes = (
   app: FastifyInstance,
@@ -78,7 +75,13 @@ export const routes = (
     async (
       req: FastifyRequest<{
         Body: {
-          file: FileList;
+          file: {
+            data: Buffer;
+            filename: string;
+            encoding: string;
+            mimetype: string;
+            limit: boolean;
+          }[];
           client: string;
           name: string;
           event: string;
@@ -91,60 +94,32 @@ export const routes = (
       if (req.isAuthenticated()) {
         try {
           const db = await app.mongo.db?.collection("movies");
-          const uploadValue = await req.body.file; // access files
+          const file = await req.body.file;
 
-          console.log("uploadValue", uploadValue);
-          console.log("req.body", req.body);
+          if (!file) {
+            return rep.status(500).send({ error: "empty data" });
+          }
 
           await pump(
-            //@ts-ignore
-            Buffer.from(uploadValue[0].data),
-            //@ts-ignore
-            fs.createWriteStream(`./src/assets/${uploadValue[0].filename}`)
+            bufferToStream(file[0].data),
+            fs.createWriteStream(`./src/assets/${file[0].filename}`)
           );
 
-          // const film = await db?.insertOne({
-          //   previewImg: file.filename,
-          //   client: client,
-          //   name: name,
-          //   event: event,
-          //   vimeo: vimeo,
-          //   description: description,
-          // });
-          // rep.status(200).send(film);
+          const film = await db
+            ?.insertOne({
+              previewImg: file[0].filename,
+              client: req.body.client,
+              name: req.body.name,
+              event: req.body.event,
+              vimeo: req.body.vimeo,
+              description: req.body.description,
+            })
+            .then((result) => db.findOne({ _id: result.insertedId }));
+
+          rep.status(200).send(film);
         } catch (err) {
           rep.status(500).send(err);
         }
-
-        // try {
-        //   const db = await app.mongo.db?.collection("movies");
-        //   const data = await req.file();
-
-        //   if (!data?.file) {
-        //     return rep.status(500).send({ error: { message: "empty data" } });
-        //   }
-
-        //   await pump(
-        //     data.file,
-        //     fs.createWriteStream(`./src/assets/${data.filename}`)
-        //   );
-
-        //   const film = await db?.insertOne({
-        //     previewImg: data.filename,
-        //     client: data?.fields?.client,
-        //     //@ts-ignore
-        //     name: data.fields.name.value,
-        //     //@ts-ignore
-        //     event: data.fields.event.value,
-        //     //@ts-ignore
-        //     vimeo: data.fields.vimeo.value,
-        //     //@ts-ignore
-        //     description: data.fields.description.value,
-        //   });
-        //   rep.status(200).send(film);
-        // } catch (err) {
-        //   rep.status(500).send(err);
-        // }
       }
     }
   );
