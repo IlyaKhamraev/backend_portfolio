@@ -6,6 +6,7 @@ import { bufferToStream } from "src/utils/file";
 import fs from "fs";
 import util from "util";
 import { pipeline } from "stream";
+import { uuidv4 } from "src/helpers";
 
 const pump = util.promisify(pipeline);
 
@@ -100,14 +101,17 @@ export const routes = (
             return rep.status(500).send({ error: "empty data" });
           }
 
+          const type = file[0].mimetype.split("/")[1];
+          const newNameFile = `${uuidv4()}.${type}`;
+
           await pump(
             bufferToStream(file[0].data),
-            fs.createWriteStream(`./src/assets/${file[0].filename}`)
+            fs.createWriteStream(`./src/assets/${newNameFile}`)
           );
 
           const film = await db
             ?.insertOne({
-              previewImg: file[0].filename,
+              previewImg: newNameFile,
               client: req.body.client,
               name: req.body.name,
               event: req.body.event,
@@ -129,7 +133,7 @@ export const routes = (
       req: FastifyRequest<{
         Body: {
           id: string;
-          promoImg: string;
+          previewImg: string;
           client: string;
           name: string;
           category: string;
@@ -138,7 +142,7 @@ export const routes = (
       }>,
       rep
     ) => {
-      const { id, promoImg, client, name, category, movie } = req.body;
+      const { id, previewImg, client, name, category, movie } = req.body;
 
       try {
         const db = await app.mongo.db?.collection("movies");
@@ -166,6 +170,12 @@ export const routes = (
 
       try {
         const db = await app.mongo.db?.collection("movies");
+        const film = await db?.findOne({ _id: new ObjectId(id) });
+
+        //@ts-ignore
+        fs.unlink(`./src/assets/${film.previewImg}`, () =>
+          console.log("removed file")
+        );
         const removedFilm = await db?.deleteOne({ _id: new ObjectId(id) });
 
         rep.status(200).send({ ...removedFilm, id: id });
